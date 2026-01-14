@@ -4,9 +4,59 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { GameStateProvider, useGameState } from './context/GameStateContext'
 import './index.css'
 
+const NotificationSystem = () => {
+  const { messages } = useGameState();
+  const [activeNotifications, setActiveNotifications] = useState([]);
+
+  useEffect(() => {
+    // Only show messages from Zero
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'zero') {
+      const id = Date.now();
+      setActiveNotifications(prev => [...prev, { ...lastMessage, id }]);
+      setTimeout(() => {
+        setActiveNotifications(prev => prev.filter(n => n.id !== id));
+      }, 5000);
+    }
+  }, [messages]);
+
+  return (
+    <div className="notification-container">
+      <AnimatePresence>
+        {activeNotifications.map(n => (
+          <motion.div
+            key={n.id}
+            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+            className="toast"
+          >
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <Terminal size={16} color="var(--accent-primary)" style={{ marginTop: '2px' }} />
+              <div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '4px', textTransform: 'uppercase' }}>Zero // Incoming</div>
+                {n.text}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const ChatPanel = () => {
   const { messages, addMessage, currentMission, selectMission } = useGameState();
   const [inputValue, setInputValue] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (isMobile) return null;
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
@@ -107,7 +157,7 @@ const SocialBrowser = ({ target }) => {
 
   if (target === 'higgins') {
     return (
-      <div style={{ maxWidth: '600px', margin: '20px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', maxWidth: '600px', margin: '10px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
         <div style={{ height: '150px', background: 'linear-gradient(to right, #6a11cb 0%, #2575fc 100%)', position: 'relative' }} />
         <div style={{ padding: '0 20px 20px', marginTop: '-40px', position: 'relative' }}>
           <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '4px solid white', background: '#ddd', overflow: 'hidden' }}>
@@ -146,7 +196,7 @@ const SocialBrowser = ({ target }) => {
 
   if (target === 'miller') {
     return (
-      <div style={{ maxWidth: '600px', margin: '20px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', maxWidth: '600px', margin: '10px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
         <div style={{ height: '150px', background: 'linear-gradient(to right, #ff9a9e 0%, #fecfef 100%)' }} />
         <div style={{ padding: '0 20px 20px', marginTop: '-40px' }}>
           <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '4px solid white', background: '#ddd', overflow: 'hidden' }}>
@@ -209,7 +259,7 @@ const SocialBrowser = ({ target }) => {
 
   if (target === 'vance') {
     return (
-      <div style={{ maxWidth: '600px', margin: '20px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '100%', maxWidth: '600px', margin: '10px auto', background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
         <div style={{ height: '150px', background: 'linear-gradient(to right, #00c6ff 0%, #0072ff 100%)' }} />
         <div style={{ padding: '0 20px 20px', marginTop: '-40px' }}>
           <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '4px solid white', background: '#ddd', overflow: 'hidden' }}>
@@ -261,7 +311,7 @@ const LinkedInBrowser = () => {
   const { collectEvidence, evidence } = useGameState();
 
   return (
-    <div style={{ maxWidth: '800px', margin: '20px auto', background: '#f3f2ef', padding: '20px' }}>
+    <div style={{ width: '100%', maxWidth: '800px', margin: '10px auto', background: '#f3f2ef', padding: window.innerWidth < 600 ? '10px' : '20px' }}>
       <div style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(0,0,0,0.08)' }}>
         <div style={{ height: '100px', background: '#a0b4b7' }} />
         <div style={{ padding: '0 24px 24px', marginTop: '-50px' }}>
@@ -646,8 +696,8 @@ The BitVault Pro VIP Team`,
   };
 
   return (
-    <div style={{ flex: 1, padding: '20px', background: '#1a1b25' }}>
-      <div style={{ background: 'white', borderRadius: '8px', color: 'black', maxWidth: '700px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', position: 'relative' }}>
+    <div style={{ flex: 1, padding: '10px', background: '#1a1b25', overflowY: 'auto' }}>
+      <div style={{ background: 'white', borderRadius: '8px', color: 'black', width: '100%', maxWidth: '700px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', position: 'relative' }}>
         <div style={{ background: '#0a66c2', color: 'white', padding: '12px 20px', borderBottom: '1px solid #ddd', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
           <span>Phish-O-Matic 3000: Payload Deployment</span>
           <Mail size={16} />
@@ -761,7 +811,14 @@ const MissionHub = () => {
         <p style={{ color: 'var(--text-dim)' }}>Select a target profile to begin reconnaissance.</p>
       </motion.div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', maxWidth: '1000px', width: '100%' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px',
+        maxWidth: '1000px',
+        width: '100%',
+        padding: '0 10px'
+      }}>
         {[
           { id: 'MISSION_1', name: 'Robert Higgins', role: 'Middle Manager', level: 'EASY', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200' },
           { id: 'MISSION_2', name: 'Joe Miller', role: 'Logistics Lead', level: 'INTERMEDIATE', img: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200' },
@@ -775,9 +832,11 @@ const MissionHub = () => {
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(0,242,255,0.2)',
               borderRadius: '16px',
-              padding: '24px',
+              padding: '16px',
               cursor: 'pointer',
               display: 'flex',
+              flexDirection: window.innerWidth < 480 ? 'column' : 'row',
+              alignItems: 'center',
               gap: '20px',
               position: 'relative',
               overflow: 'hidden'
@@ -787,8 +846,8 @@ const MissionHub = () => {
               <div style={{ position: 'absolute', top: 10, right: 10, background: '#00ff88', color: 'black', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 800 }}>COMPLETED</div>
             )}
             <img src={mission.img} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover' }} alt={mission.name} />
-            <div>
-              <h3 style={{ color: 'white', marginBottom: '4px' }}>{mission.name}</h3>
+            <div style={{ textAlign: window.innerWidth < 480 ? 'center' : 'left' }}>
+              <h3 style={{ color: 'white', marginBottom: '4px', fontSize: '1rem' }}>{mission.name}</h3>
               <p style={{ color: 'var(--accent-primary)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px' }}>{mission.role}</p>
               <span style={{ fontSize: '0.7rem', color: mission.level === 'EASY' ? '#00ff88' : '#ffbd2e', border: `1px solid ${mission.level === 'EASY' ? '#00ff88' : '#ffbd2e'}`, padding: '2px 6px', borderRadius: '4px' }}>{mission.level}</span>
             </div>
@@ -839,6 +898,7 @@ function App() {
   return (
     <GameStateProvider>
       <div className="hacker-os">
+        <NotificationSystem />
         <ChatPanel />
         <MainArea />
         <Clipboard />
